@@ -62,6 +62,7 @@ module.exports = class CostaApi {
       this.debug('got results page');
     } catch (error) {
       this.debug('got results page errored: ' + error.toString());
+      await driver.quit();
       throw new Error('Could not find gift card number text box: ' + error.toString(), { cause: error });
     }
 
@@ -70,9 +71,20 @@ module.exports = class CostaApi {
     try {
       this.debug('checking results page...');
       balanceHtml = await driver.findElement(webdriver.By.className(this.balanceCheckResultElementClass)).getAttribute('innerHTML');
+      await driver.quit();
       this.debug('checked results page');
     } catch (error) {
+
+      const errorHtml = await driver.findElement(webdriver.By.css('h1')).getAttribute('innerHTML');
+
+      if (errorHtml == 'Access Denied') {
+        this.debug('Access denied error from server');
+        await driver.quit();
+        throw new Error('Access denied error from server');
+      }
+
       this.debug('checking results page errored: ' + error.toString());
+      await driver.quit();
       throw new Error('Gift card number HTML element not returned: ' + error.toString(), { cause: error });
     }
 
@@ -87,8 +99,6 @@ module.exports = class CostaApi {
       this.debug('checked balance');
       this.debug('balance: ' + matches[1]);
     }
-
-    await driver.quit();
 
     return matches[1];
     
